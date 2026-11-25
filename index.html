@@ -768,6 +768,7 @@ footer li a{display:inline-block;padding:6px 0}
       <label>Kilometraje<input id="f-km" inputmode="numeric" placeholder="Ej: 120000"></label>
       <label>Comuna<input id="f-com" placeholder="Ej: Bulnes"></label>
       <label>Precio esperado (opcional)<input id="f-pre" inputmode="numeric" placeholder="Ej: 8000000"></label>
+      <input id="f-web" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
       <div class="full upload">
         <label class="drop" for="f-fotos"><svg viewBox="0 0 24 24"><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3M12 4v12M7 9l5-5 5 5"/></svg><span>Agregar fotos del auto <em id="fcount">0 de 10</em></span></label>
         <input id="f-fotos" type="file" accept="image/*" multiple hidden>
@@ -874,6 +875,7 @@ const DB = (function(){
     if (c === "email_not_confirmed" || /Email not confirmed/i.test(m)) return "Debes confirmar tu correo antes de ingresar.";
     if (c === "same_password") return "La nueva contraseña debe ser distinta de la anterior.";
     if (c === "weak_password" || /Password should be/i.test(m)) return "La contraseña es muy débil: usa al menos 8 caracteres.";
+    if (/Demasiadas solicitudes|Ya recibimos/.test(m)) return m;
     if (st === 429 || /rate limit|too many/i.test(m)) return "Demasiados intentos seguidos. Espera unos minutos y vuelve a intentar.";
     if (c === "42501" || st === 401 || st === 403 || /row-level security|permission denied|JWT|Unauthorized/i.test(m)) return "No tienes permiso para esta acción. Vuelve a iniciar sesión.";
     if (c === "23505" && /recommended/.test(m)) return "Solo un auto puede ser el Recomendado de la portada.";
@@ -1245,6 +1247,7 @@ async function saveRequest(){
   const data={nombre:v("f-nom"),whatsapp:v("f-wsp"),servicio:v("f-serv"),marca:v("f-marca"),modelo:v("f-mod"),ano:v("f-ano"),km:v("f-km"),comuna:v("f-com"),precio:v("f-pre"),nfotos:files.files.length,estado:"nueva",fecha:new Date().toISOString()};
   const sig=JSON.stringify({...data,fecha:0})+[...files.files].map(f=>f.name+f.size).join();
   if(saving||sig===lastSaved)return; /* evita duplicados por doble clic */
+  if(v("f-web")){lastSaved=sig;return} /* campo trampa: solo lo completan los bots */
   saving=true;setNote("Registrando tu solicitud…");
   try{const fotos=[];for(const f of [...files.files].slice(0,4))fotos.push(await shrinkImage(f,700,.6));
     await DB.ready;await DB.addRequest({...data,fotos});lastSaved=sig;

@@ -85,6 +85,12 @@ await t("visitante NO puede fijar estado (el servidor lo fuerza a 'nueva') ni ru
   assert(sql("select estado from requests where nombre='Intento'") === "nueva", "estado no forzado");
   assert((await pub.from("requests").insert({servicio: "Quiero vender mi auto", nombre: "x", marca: "x", modelo: "x", fotos: [`${rid}/0.jpg`]})).error);
 });
+await t("límite anti-spam: máx. 3 solicitudes por día del mismo WhatsApp", async () => {
+  const row = n => ({servicio: "Quiero vender mi auto", nombre: "Spam " + n, marca: "x", modelo: "x", whatsapp: "+56 9 5555 0000"});
+  for (let n = 0; n < 3; n++) assert(!(await pub.from("requests").insert(row(n))).error, "la " + n + " debió pasar");
+  const r = await pub.from("requests").insert(row(9)); assert(r.error && /Demasiadas/.test(r.error.message), JSON.stringify(r.error));
+  sql("delete from requests where nombre like 'Spam %'");
+});
 await t("servicio inválido rechazado", async () => assert((await pub.from("requests").insert({servicio: "otra cosa", nombre: "x", marca: "x", modelo: "x"})).error));
 await t("visitante NO puede leer solicitudes", async () => denied(await pub.from("requests").select("*")));
 await t("usuario sin permisos NO puede leer/editar/borrar solicitudes", async () => {
@@ -214,6 +220,14 @@ await t("formulario: solicitud con foto se guarda en Supabase", async () => {
   await visitor.waitForFunction(() => /registrada|No pudimos/.test(document.querySelector("#formNote").textContent), null, {timeout: 15000});
   assert((await visitor.textContent("#formNote")).includes("registrada"), await visitor.textContent("#formNote"));
   assert(sql("select nombre||'|'||ano||'|'||km||'|'||precio||'|'||cardinality(fotos) from requests") === "Ana Pérez|2016|80000|6500000|1");
+});
+await t("formulario: bots que llenan el campo trampa no guardan nada", async () => {
+  const bot = await (await browser.newContext()).newPage();
+  await bot.context().route(/wa\.me|whatsapp\.com/, r => r.fulfill({status: 200, contentType: "text/html", body: "ok"}));
+  await bot.goto(SITE); await bot.fill("#f-nom", "Bot"); await bot.fill("#f-marca", "x"); await bot.fill("#f-mod", "x");
+  await bot.evaluate(() => { document.querySelector("#f-web").value = "http://spam"; });
+  const [wa] = await Promise.all([bot.context().waitForEvent("page"), bot.click("#waSend")]); await wa.close();
+  await bot.waitForTimeout(1500); assert(sql("select count(*) from requests where nombre='Bot'") === "0"); await bot.close();
 });
 await t("formulario: doble clic no duplica la solicitud", async () => {
   const [wa] = await Promise.all([visitor.context().waitForEvent("page"), visitor.click("#waSend")]); await wa.close();
