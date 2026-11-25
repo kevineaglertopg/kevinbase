@@ -1,0 +1,27 @@
+{
+  "name": "automotora-aguilar",
+  "version": "1.0.0",
+  "description": "Sitio web y panel de Automotora Aguilar (Vercel + Supabase)",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:demo": "DEMO_BUILD=1 node scripts/build.mjs",
+    "preview": "npx --yes serve@14.2.4 dist -l 3000",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:push": "supabase db push",
+    "test": "node tests/e2e.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.2"
+  },
+  "devDependencies": {
+    "supabase": "^3.4.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}
