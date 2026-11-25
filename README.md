@@ -29,6 +29,13 @@ vercel.json                 Build, carpeta de salida y cabeceras de seguridad
 .env.example                Variables necesarias
 ```
 
+## En producción
+
+- **Sitio:** https://automotora-aguilar-kevintopg.vercel.app (panel en `/#admin`)
+- **Vercel:** proyecto `automotora-aguilar`, conectado a este repositorio. Cada push a `main` se publica automáticamente.
+- **Supabase:** proyecto `automotoraaguilar`. Las migraciones de `supabase/migrations/` ya están aplicadas.
+  Para un cambio de base de datos nuevo, agrega una migración aquí y aplícala en Supabase antes de publicar el código que la usa.
+
 ## Seguridad
 
 - **RLS activado en todas las tablas.** Visitantes: ven solo autos no ocultos y pueden *crear* solicitudes (no leerlas, editarlas ni borrarlas).
