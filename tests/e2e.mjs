@@ -188,10 +188,49 @@ await t("editar foto reemplaza el archivo anterior en Storage", async () => {
   const newPath = sql("select image_path from cars where name='Toyota Prueba'");
   assert(newPath !== oldPath && sql(`select count(*) from storage.objects where name='${oldPath}'`) === "0");
 });
-await t("eliminar auto borra fila y foto", async () => {
+await t("galería: admin agrega 3 fotos extra y link de Instagram", async () => {
+  await page.locator(".arow", {hasText: "Toyota Prueba"}).locator('[data-a="edit"]').click();
+  await page.setInputFiles("#eGal", [join(root, "img/auto-4.jpg"), join(root, "img/auto-5.jpg"), join(root, "img/auto-6.jpg")]);
+  await page.waitForFunction(() => document.querySelectorAll("#gGrid .a-gi").length === 3);
+  await page.fill("#eIg", "https://www.instagram.com/p/ABC123xyz/");
+  await page.click(".a-form button[type=submit]"); await toast("Cambios guardados");
+  await until("select cardinality(gallery)||'|'||instagram_url from cars where name='Toyota Prueba'", "3|https://www.instagram.com/p/ABC123xyz/");
+  assert(sql("select count(*) from storage.objects o join cars c on o.name = any(c.gallery) where c.name='Toyota Prueba'") === "3");
+});
+await t("galería: link de Instagram inválido es rechazado", async () => {
+  await page.locator(".arow", {hasText: "Toyota Prueba"}).locator('[data-a="edit"]').click();
+  await page.fill("#eIg", "https://sitio-raro.com/x"); await page.click(".a-form button[type=submit]");
+  await page.waitForFunction(() => /Instagram/.test(document.querySelector("#eErr").textContent));
+  assert((await anon().from("cars").select("id").limit(1)).error == null);
+  await page.click("#eCancel");
+});
+await t("galería: el sitio público muestra carrusel, contador y botón de Instagram", async () => {
+  const v = await (await browser.newContext()).newPage(); v.on("pageerror", e => jsErrors.push(e.message));
+  await v.goto(SITE); await v.waitForSelector("#cars .car");
+  if (await v.locator("#more:not(.hidden)").count()) await v.click("#more");
+  const card = v.locator(".car", {hasText: "Toyota Prueba"}); assert((await card.locator(".cnt").textContent()).includes("4"), "contador en tarjeta");
+  await card.locator("[data-ficha]").click(); await v.waitForSelector("#modal.open .gtrack img");
+  assert(await v.locator("#modal .gtrack img").count() === 4, "4 fotos en el carrusel");
+  assert((await v.textContent("#modal .gcount")).trim() === "1 / 4");
+  await v.click("#modal .gnav.next"); await v.waitForFunction(() => document.querySelector("#modal .gcount").textContent.trim() === "2 / 4");
+  await v.keyboard.press("ArrowRight"); await v.waitForFunction(() => document.querySelector("#modal .gcount").textContent.trim() === "3 / 4");
+  assert(await v.getAttribute("#modal .btn-ig", "href") === "https://www.instagram.com/p/ABC123xyz/");
+  await v.close();
+});
+await t("galería: quitar una foto la borra de Storage", async () => {
+  await page.locator(".arow", {hasText: "Toyota Prueba"}).locator('[data-a="edit"]').click();
+  await page.waitForFunction(() => document.querySelectorAll("#gGrid .a-gi").length === 3);
+  const quitada = sql("select gallery[1] from cars where name='Toyota Prueba'");
+  await page.locator('#gGrid [data-g="x"]').first().click(); await page.click(".a-form button[type=submit]"); await toast("Cambios guardados");
+  await until("select cardinality(gallery) from cars where name='Toyota Prueba'", "2");
+  assert(sql(`select count(*) from storage.objects where name='${quitada}'`) === "0", "la foto quitada sigue en Storage");
+});
+await t("eliminar auto borra fila, portada y galería", async () => {
   const path = sql("select image_path from cars where name='Toyota Prueba'");
+  const antes = +sql("select count(*) from storage.objects where bucket_id='car-photos'");
   await page.locator(".arow", {hasText: "Toyota Prueba"}).locator('[data-a="del"]').click(); await toast("Auto eliminado");
   assert(sql("select count(*) from cars where name='Toyota Prueba'") === "0" && sql(`select count(*) from storage.objects where name='${path}'`) === "0");
+  assert(+sql("select count(*) from storage.objects where bucket_id='car-photos'") === antes - 3, "quedaron fotos de la galería");
 });
 await t("cerrar sesión", async () => { await page.click("#aOut"); await page.waitForSelector("#aLogin"); });
 
