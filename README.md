@@ -31,7 +31,8 @@ vercel.json                 Build, carpeta de salida y cabeceras de seguridad
 
 ## En producción
 
-- **Sitio:** https://automotora-aguilar-kevintopg.vercel.app (panel en `/#admin`)
+- **Sitio:** https://automotoraaguilar.cl (panel en `/#admin`). También responde en https://automotora-aguilar-kevintopg.vercel.app
+- **Dominio:** `automotoraaguilar.cl` registrado en NIC Chile, con servidores DNS `ns1.vercel-dns.com` / `ns2.vercel-dns.com`. `www` redirige al dominio raíz.
 - **Vercel:** proyecto `automotora-aguilar`, conectado a este repositorio. Cada push a `main` se publica automáticamente.
 - **Supabase:** proyecto `automotoraaguilar`. Las migraciones de `supabase/migrations/` ya están aplicadas.
   Para un cambio de base de datos nuevo, agrega una migración aquí y aplícala en Supabase antes de publicar el código que la usa.

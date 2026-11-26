@@ -50,6 +50,7 @@ rmSync(out, {recursive: true, force: true});
 mkdirSync(join(out, "vendor"), {recursive: true});
 cpSync(join(root, "index.html"), join(out, "index.html"));
 cpSync(join(root, "img"), join(out, "img"), {recursive: true});
+for (const f of ["robots.txt", "sitemap.xml"]) if (existsSync(join(root, f))) cpSync(join(root, f), join(out, f));
 
 const require = createRequire(import.meta.url);
 const sbPkg = dirname(require.resolve("@supabase/supabase-js/package.json"));
